@@ -1,0 +1,21 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.freezed.dart
+.env
+.env.local
+
+# 로컬 Flutter SDK 복사본 (프로젝트 루트에 두는 경우 — 용량·경로 이슈로 제외)
+/flutter/
+
+# IDE·로그
+.idea/
+*.iml
+custom_lint.log
+
+# Android 릴리스 서명 (저장소에 올리지 않음)
+android/key.properties
+android/app/key.properties
+android/**/*.jks
+android/**/*.keystore
