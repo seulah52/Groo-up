@@ -25,8 +25,9 @@ class OpenAiChatService {
       data: <String, dynamic>{
         'model': 'gpt-4o-mini',
         'messages': messages,
-        'max_tokens': 512,
-        'temperature': 0.7,
+        // 분석·리스크·액션·다각도 질문 구조에 맞춤
+        'max_tokens': 1024,
+        'temperature': 0.65,
       },
     );
     final body = response.data;

@@ -32,9 +32,10 @@ class InputRemoteDatasourceImpl implements InputRemoteDatasource {
       'user_id': sessionUser.id,
       'title': title,
       'category': category,
+      'completion_rate': 0,
       'growth_stage': 'seed',
       'health_status': 'red',
-      'health_score': 30,
+      'health_score': 0,
     };
     final res = await _supabase.from(SupabaseTables.ideas).insert(row).select().single();
     return GrooModel.fromJson(res);

@@ -12,6 +12,7 @@ class GrooTreeWidget extends ConsumerWidget {
   Color get _statusColor => switch (groo.healthStatus) {
     'red'    => AppColors.healthRed,
     'orange' => AppColors.healthOrange,
+    'gold'   => const Color(0xFFFFB300),
     _        => AppColors.healthGreen,
   };
 
@@ -37,6 +38,9 @@ class GrooTreeWidget extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(groo.growthStage.label,
               style: TextStyle(fontSize: 11, color: _statusColor)),
+          const SizedBox(height: 2),
+          Text('${groo.completionRate}%',
+              style: TextStyle(fontSize: 10, color: _statusColor)),
         ]),
       ),
     );

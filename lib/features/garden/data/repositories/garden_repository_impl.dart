@@ -32,6 +32,7 @@ class GardenRepositoryImpl implements GardenRepository {
       final model = await _remote.insertGroo({
         'user_id': groo.userId, 'title': groo.title,
         'description': groo.description, 'category': groo.category,
+        'completion_rate': groo.completionRate,
         'growth_stage': groo.growthStage.name,
         'health_status': groo.healthStatus, 'health_score': groo.healthScore,
       });
@@ -52,6 +53,22 @@ class GardenRepositoryImpl implements GardenRepository {
     try { return Right((await _remote.updateHealthScore(grooId, score)).toEntity()); }
     on PostgrestException catch (e) { return Left(ServerFailure(message: e.message, code: e.code)); }
     catch (e) { return Left(UnexpectedFailure(message: e.toString())); }
+  }
+
+  @override
+  Future<Either<Failure, GrooEntity>> updateCompletionRate(
+    String grooId,
+    int completionRate,
+  ) async {
+    try {
+      return Right(
+        (await _remote.updateCompletion(grooId, completionRate)).toEntity(),
+      );
+    } on PostgrestException catch (e) {
+      return Left(ServerFailure(message: e.message, code: e.code));
+    } catch (e) {
+      return Left(UnexpectedFailure(message: e.toString()));
+    }
   }
 
   @override

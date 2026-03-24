@@ -1,28 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/ai_service.dart';
 import '../../../../core/services/openai_chat_service.dart';
+import '../../../garden/domain/entities/groo_entity.dart';
+import '../../../garden/presentation/providers/garden_provider.dart';
+import '../providers/interview_groo_provider.dart';
 import '../providers/openai_chat_provider.dart';
 
-class InterviewScreen extends ConsumerStatefulWidget {
+class InterviewScreen extends ConsumerWidget {
   const InterviewScreen({super.key, required this.grooId});
 
   final String grooId;
 
   @override
-  ConsumerState<InterviewScreen> createState() => _InterviewScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final grooAsync = ref.watch(interviewGrooProvider(grooId));
+    return grooAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('그루와 대화')),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(title: const Text('그루와 대화')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              '아이디어를 불러오지 못했습니다.\n$e',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+      data: (groo) => _InterviewChatView(groo: groo),
+    );
+  }
 }
 
-class _InterviewScreenState extends ConsumerState<InterviewScreen> {
+class _InterviewChatView extends ConsumerStatefulWidget {
+  const _InterviewChatView({required this.groo});
+
+  final GrooEntity groo;
+
+  @override
+  ConsumerState<_InterviewChatView> createState() => _InterviewChatViewState();
+}
+
+class _InterviewChatViewState extends ConsumerState<_InterviewChatView> {
   final _controller = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _messages = <Map<String, String>>[];
   bool _isTyping = false;
+  late GrooEntity _currentGroo;
 
-  String get _systemPrompt => '''
-당신은 Groo-up 앱의 "그루" 코치입니다. 사용자의 아이디어(씨앗)를 나무로 키우는 여정을 돕습니다.
-(세션 아이디어 참조 id: ${widget.grooId})
-한국어로 짧고 따뜻하게 답하세요. 한 번에 2~4문장 정도로, 질문 하나를 포함해 대화를 이어가세요.
-사용자가 구체적이지 않으면, 목표·대상·차별점을 물어보세요.''';
+  @override
+  void initState() {
+    super.initState();
+    _currentGroo = widget.groo;
+  }
+
+  String _systemPromptForGroo() {
+    final g = _currentGroo;
+    return AiService.buildInterviewSystemPrompt(
+      grooId: g.id,
+      ideaContent: AiService.buildIdeaContent(g),
+      category: g.category,
+      growthStageLabel: '${g.growthStage.name} (${g.growthStage.label})',
+    );
+  }
 
   @override
   void dispose() {
@@ -37,6 +82,15 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
       appBar: AppBar(
         title: const Text('그루와 대화'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: Text(
+                '완성도 ${_currentGroo.completionRate}%',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
           if (!OpenAiChatService.isAvailable)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -51,6 +105,36 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: (_currentGroo.completionRate.clamp(0, 100)) / 100,
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                FilledButton.icon(
+                  onPressed: _currentGroo.completionRate >= 100
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('사업 제안서 생성 기능은 다음 단계에서 연결됩니다.'),
+                            ),
+                          );
+                        }
+                      : null,
+                  icon: const Icon(Icons.description_outlined),
+                  label: const Text('사업 제안서 생성'),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               controller: _scrollCtrl,
@@ -132,10 +216,12 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
     if (OpenAiChatService.isAvailable) {
       try {
         final svc = ref.read(openAiChatServiceProvider);
-        final apiMessages = <Map<String, String>>[
-          {'role': 'system', 'content': _systemPrompt},
-          ..._messages.map((m) => {'role': m['role']!, 'content': m['content']!}),
-        ];
+        final apiMessages = AiService.buildChatMessages(
+          systemPrompt: _systemPromptForGroo(),
+          history: _messages
+              .map((m) => {'role': m['role']!, 'content': m['content']!})
+              .toList(),
+        );
         reply = await svc.completeChat(apiMessages);
       } catch (e) {
         if (mounted) {
@@ -143,12 +229,40 @@ class _InterviewScreenState extends ConsumerState<InterviewScreen> {
             SnackBar(content: Text('AI 응답 실패: $e')),
           );
         }
-        reply = '지금은 연결이 불안정해요. 흥미로운 아이디어네요! 목표를 한 줄로 말해줄 수 있을까요?';
+        reply = AiService.buildOfflineAssistantReply(
+          groo: _currentGroo,
+          lastUserMessage: text,
+        );
       }
     } else {
       await Future<void>.delayed(const Duration(milliseconds: 600));
-      reply = '흥미로운 아이디어네요! 누구를 위한 것인지, 그리고 지금 가장 막히는 지점이 무엇인가요?';
+      reply = AiService.buildOfflineAssistantReply(
+        groo: _currentGroo,
+        lastUserMessage: text,
+      );
     }
+
+    final completionRate = AiService.calculateCompletionRate(
+      groo: _currentGroo,
+      history: _messages,
+    );
+    final updateResult = await ref
+        .read(gardenRepositoryProvider)
+        .updateCompletionRate(_currentGroo.id, completionRate);
+    updateResult.fold(
+      (failure) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('완성도 업데이트 실패: ${failure.message}')),
+          );
+        }
+      },
+      (updatedGroo) {
+        _currentGroo = updatedGroo;
+      },
+    );
+    ref.invalidate(interviewGrooProvider(_currentGroo.id));
+    ref.invalidate(gardenNotifierProvider);
 
     if (!mounted) return;
     setState(() {

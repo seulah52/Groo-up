@@ -7,8 +7,9 @@ class GrooEntity extends Equatable {
   final String title;
   final String? description;
   final String? category;
+  final int completionRate;    // 0~100
   final GrowthStage growthStage;
-  final String healthStatus;   // 'red' | 'orange' | 'green'
+  final String healthStatus;   // 'red' | 'orange' | 'green' | 'gold'
   final int healthScore;       // 0~100
   final DateTime lastActivityAt;
   final DateTime createdAt;
@@ -17,17 +18,20 @@ class GrooEntity extends Equatable {
   const GrooEntity({
     required this.id, required this.userId, required this.title,
     this.description, this.category,
+    required this.completionRate,
     required this.growthStage, required this.healthStatus,
     required this.healthScore, required this.lastActivityAt,
     required this.createdAt, this.isArchived = false,
   });
 
   GrooEntity copyWith({
+    int? completionRate,
     GrowthStage? growthStage, String? healthStatus,
     int? healthScore, DateTime? lastActivityAt,
   }) => GrooEntity(
     id: id, userId: userId, title: title,
     description: description, category: category,
+    completionRate: completionRate ?? this.completionRate,
     growthStage: growthStage ?? this.growthStage,
     healthStatus: healthStatus ?? this.healthStatus,
     healthScore: healthScore ?? this.healthScore,
@@ -36,5 +40,6 @@ class GrooEntity extends Equatable {
   );
 
   @override
-  List<Object?> get props => [id, growthStage, healthStatus, healthScore];
+  List<Object?> get props =>
+      [id, completionRate, growthStage, healthStatus, healthScore];
 }

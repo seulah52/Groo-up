@@ -78,6 +78,9 @@ List<GrooEntity> filteredGroos(FilteredGroosRef ref) {
     case HealthFilter.all:    return all;
     case HealthFilter.red:    return all.where((g) => g.healthStatus == 'red').toList();
     case HealthFilter.orange: return all.where((g) => g.healthStatus == 'orange').toList();
-    case HealthFilter.green:  return all.where((g) => g.healthStatus == 'green').toList();
+    case HealthFilter.green:
+      return all
+          .where((g) => g.healthStatus == 'green' || g.healthStatus == 'gold')
+          .toList();
   }
 }

@@ -9,5 +9,6 @@ abstract interface class GardenRepository {
   Future<Either<Failure, GrooEntity>>       createGroo(GrooEntity groo);
   Future<Either<Failure, GrooEntity>>       updateGrowthStage(String grooId, GrowthStage newStage);
   Future<Either<Failure, GrooEntity>>       updateHealthScore(String grooId, int score);
+  Future<Either<Failure, GrooEntity>>       updateCompletionRate(String grooId, int completionRate);
   Future<Either<Failure, Unit>>             deleteGroo(String id);
 }

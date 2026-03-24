@@ -7,6 +7,7 @@ class GrooModel {
   final String title;
   final String? description;
   final String? category;
+  final int completionRate;
   final String growthStage;
   final String healthStatus;
   final int healthScore;
@@ -17,6 +18,7 @@ class GrooModel {
   const GrooModel({
     required this.id, required this.userId, required this.title,
     this.description, this.category,
+    required this.completionRate,
     required this.growthStage, required this.healthStatus,
     required this.healthScore, required this.lastActivityAt,
     required this.createdAt, this.isArchived = false,
@@ -34,6 +36,7 @@ class GrooModel {
       title: json['title'] as String,
       description: json['description'] as String?,
       category: json['category'] as String?,
+      completionRate: _parseInt(json['completion_rate'], fallback: 0),
       growthStage: growthRaw,
       healthStatus: healthRaw,
       healthScore: _parseInt(json['health_score'], fallback: 100),
@@ -79,7 +82,7 @@ class GrooModel {
 
   static String _normalizeHealth(String raw) {
     final r = raw.toLowerCase();
-    if (r == 'red' || r == 'orange' || r == 'green') return r;
+    if (r == 'red' || r == 'orange' || r == 'green' || r == 'gold') return r;
     return 'green';
   }
 
@@ -100,6 +103,7 @@ class GrooModel {
   Map<String, dynamic> toJson() => {
     'id': id, 'user_id': userId, 'title': title,
     'description': description, 'category': category,
+    'completion_rate': completionRate,
     'growth_stage': growthStage, 'health_status': healthStatus,
     'health_score': healthScore,
     'last_activity_at': lastActivityAt.toIso8601String(),
@@ -110,6 +114,7 @@ class GrooModel {
   GrooEntity toEntity() => GrooEntity(
     id: id, userId: userId, title: title,
     description: description, category: category,
+    completionRate: completionRate,
     growthStage: GrowthStage.parse(growthStage),
     healthStatus: healthStatus, healthScore: healthScore,
     lastActivityAt: lastActivityAt, createdAt: createdAt,

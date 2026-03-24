@@ -19,6 +19,7 @@ class GrooDetailScreen extends ConsumerWidget {
     final statusColor = switch (groo.healthStatus) {
       'red'    => AppColors.healthRed,
       'orange' => AppColors.healthOrange,
+      'gold'   => const Color(0xFFFFB300),
       _        => AppColors.healthGreen,
     };
 
@@ -62,23 +63,23 @@ class GrooDetailScreen extends ConsumerWidget {
               ]),
             )),
             const SizedBox(height: 12),
-            // 헬스 점수
+            // 아이디어 완성도
             Card(child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const Text('건강 점수', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  Text('${groo.healthScore}점', style: TextStyle(
+                  const Text('아이디어 완성도', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('${groo.completionRate}%', style: TextStyle(
                     fontSize: 20, fontWeight: FontWeight.w700, color: statusColor)),
                 ]),
                 const SizedBox(height: 8),
                 ClipRRect(borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: groo.healthScore / 100, minHeight: 8,
+                    value: groo.completionRate / 100, minHeight: 8,
                     backgroundColor: Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation(statusColor))),
                 const SizedBox(height: 6),
-                Text(_healthLabel(groo.healthScore),
+                Text(_completionLabel(groo.completionRate),
                     style: TextStyle(fontSize: 12, color: statusColor)),
               ]),
             )),
@@ -113,10 +114,11 @@ class GrooDetailScreen extends ConsumerWidget {
     );
   }
 
-  String _healthLabel(int score) {
-    if (score >= 70) return '건강한 상태입니다';
-    if (score >= 40) return '관심이 필요해요 — 인터뷰해 주세요';
-    return '위험! 지금 바로 대화를 나눠보세요';
+  String _completionLabel(int rate) {
+    if (rate >= 81) return '열매 단계입니다 — 최종 결과물 생성이 가능합니다';
+    if (rate >= 51) return '나무 단계입니다 — 구조화가 진행 중입니다';
+    if (rate >= 26) return '새싹 단계입니다 — 구체화를 이어가세요';
+    return '씨앗 단계입니다 — 맥락 정보를 더 채워주세요';
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {

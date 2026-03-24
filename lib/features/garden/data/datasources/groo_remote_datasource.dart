@@ -8,6 +8,7 @@ abstract interface class GrooRemoteDatasource {
   Future<GrooModel>       insertGroo(Map<String, dynamic> data);
   Future<GrooModel>       updateStage(String grooId, String stage);
   Future<GrooModel>       updateHealthScore(String grooId, int score);
+  Future<GrooModel>       updateCompletion(String grooId, int completionRate);
   Future<void>            deleteGroo(String id);
 }
 
@@ -56,6 +57,40 @@ class GrooRemoteDatasourceImpl implements GrooRemoteDatasource {
   }
 
   @override
+  Future<GrooModel> updateCompletion(String grooId, int completionRate) async {
+    final stageInfo = _mapCompletionToStage(completionRate);
+    final res = await _supabase
+        .from(_table)
+        .update(<String, dynamic>{
+          'completion_rate': completionRate.clamp(0, 100),
+          'growth_stage': stageInfo.growthStage,
+          'health_status': stageInfo.healthStatus,
+          'health_score': completionRate.clamp(0, 100),
+          'last_activity_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', grooId)
+        .select()
+        .single();
+    return GrooModel.fromJson(res);
+  }
+
+  @override
   Future<void> deleteGroo(String id) async =>
       _supabase.from(_table).delete().eq('id', id);
+
+  ({String growthStage, String healthStatus}) _mapCompletionToStage(
+    int completionRate,
+  ) {
+    final score = completionRate.clamp(0, 100);
+    if (score <= 25) {
+      return (growthStage: 'seed', healthStatus: 'red');
+    }
+    if (score <= 50) {
+      return (growthStage: 'sprout', healthStatus: 'orange');
+    }
+    if (score <= 80) {
+      return (growthStage: 'tree', healthStatus: 'green');
+    }
+    return (growthStage: 'fruit', healthStatus: 'gold');
+  }
 }
